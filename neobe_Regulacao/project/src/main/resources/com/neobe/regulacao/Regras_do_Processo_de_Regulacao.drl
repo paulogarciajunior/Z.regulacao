@@ -1,0 +1,62 @@
+package com.neobe.regulacao;
+import com.neobe.regulacao.solicitacao;
+import org.kie.api.runtime.process.WorkflowProcessInstance;
+
+rule "Registrar_Solicitacao_Autorizada_no_Sistema_Origem"
+	ruleflow-group "Reg_Solicitacao_Autorizada_Sistema_Origem"
+	dialect "mvel"
+	when
+	    //Se a solicitacao está autorizada previamente no sistema apenas registrar
+		s:solicitacao(situacao_original=="AU")
+	then
+		s.setSituacao_regulacao("AU");
+		s.setObs("Solicitacao automaticamente autorizada no sistema de origem");
+end
+
+
+rule "Definir_Prioridade_e_SLA"
+	ruleflow-group "Definir_SLA_e_Prioridade"
+	dialect "mvel"
+	enabled true
+	when
+	    vCONTROLE: controle();
+	then
+        vCONTROLE.setSla("1h");
+        System.out.println("@@@INICIANDO@@@");  
+        System.out.println("CONTROLE-SLA...........: " + vCONTROLE.getSla());  
+        System.out.println("CONTROLE-USUARIO.......: " + vCONTROLE.getUsuario());  
+        System.out.println("CONTROLE-GRUPO.........: " + vCONTROLE.getGrupo());  
+        System.out.println("CONTROLE-EXCECAO.......: " + vCONTROLE.getExcecao());  
+        System.out.println("CONTROLE-NEGATIVAS CAD.: " + vCONTROLE.getNegativascadastrais());  
+
+
+end
+
+rule "Verificar_Especificidades"
+	ruleflow-group "Regulacao_definir_especificidade"
+	dialect "mvel"
+	enabled true
+	when
+	    vCONTROLE: controle();
+		//solicitacao(prestador_fora_domicilio)
+    
+	then
+	    //Se as condições de especificidade forem satisfeitas será necessário setar o controle para que 
+	    //que o fluxo siga pela processo da especificidade.
+        System.out.println("REGULACAO, possui EXCECAO:" + vCONTROLE.getExcecao());
+end
+
+
+rule "Temporaria_Confirmar_Urgencia_Emergencia"
+	ruleflow-group "Confirmar_Urgencia_Emergencia"
+	dialect "mvel"
+	enabled true
+	when
+	    vCONTROLE: controle();
+	then
+	    vCONTROLE.setUrg_emerg_confirmada(false);
+        System.out.println("@@@_URGENCIA_EMERGENCIA_@@@");  
+        System.out.println("URGENCIA_EMERGENCIA: " + vCONTROLE.getUrg_emerg_confirmada());  
+
+
+end
